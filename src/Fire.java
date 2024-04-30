@@ -1,4 +1,3 @@
-
 import java.util.Random;
 
 public class Fire {
@@ -15,12 +14,9 @@ public class Fire {
     private int count;
     Random random = new Random();
 
-    Fire(enigma.console.Console cn, char[][] maze) {
+    Fire(enigma.console.Console cn, char[][] maze,Coordinates start_cr) {
         this.cn = cn;
         this.maze = maze;
-    }
-
-    Fire(Coordinates start_cr) {
         this.all_pieces = new CircularQueue(50);
         all_pieces.enqueue(start_cr);
         this.curr_cr = start_cr;
@@ -45,16 +41,17 @@ public class Fire {
         dir_rot=1;
     }
 
+
     void increaseTimer() {
         timer++;
         if (timer <= 50) {
-            spread();
+            spread(maze);
         } else if (!all_pieces.isEmpty() && timer >= 100) {
             erase(maze);
         }
     }
 
-    void spread() {
+    void spread(char[][]maze) {
         isPlaced = false;
         Coordinates dir = dirs[dir_index % dirs.length];
         dir_index += dir_rot;
@@ -71,7 +68,7 @@ public class Fire {
             dir_index += dir_rot*dirs.length*-1;
         }
         if (!isPlaced){
-            spread();
+            spread(maze);
         }
     }
     void erase(char[][] maze) {
