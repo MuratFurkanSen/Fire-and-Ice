@@ -17,7 +17,7 @@ public class CircularQueue {
     }
     Object dequeue(){
         if (isEmpty()){
-            System.out.println("Queue is empty");
+            //System.out.println("Queue is empty");
             return null;
         }
         else {

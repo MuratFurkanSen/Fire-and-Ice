@@ -62,7 +62,6 @@ public class Fire {
             maze[curr_cr.getY() + dir.getY()][curr_cr.getX() + dir.getX()] = '-';
             all_pieces.enqueue(new Coordinates(curr_cr.getX() + dir.getX(), curr_cr.getY() + dir.getY()));
             pieces_for_erasing.enqueue(new Coordinates(curr_cr.getX() + dir.getX(), curr_cr.getY() + dir.getY()));
-
             isPlaced = true;
         }
         count++;

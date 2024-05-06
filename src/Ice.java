@@ -24,7 +24,6 @@ public class Ice {
     Ice(Coordinates start_cr, Coordinates dirs){
         this.start_cr = start_cr;
         this.curr_cr = start_cr;
-//        this.dirs = new Coordinates(dirs.getX(), dirs.getY());
         this.dirs = dirs;
         this.all_pieces = new Stack(25);
         this.temp_stack = new Stack(25);
