@@ -6,6 +6,7 @@ public class Fire {
     private static char[][] maze;
     private Coordinates curr_cr;
     private CircularQueue all_pieces;
+    private CircularQueue pieces_for_erasing;
     private int timer;
     private Coordinates[] dirs;
     private int dir_index;
@@ -18,7 +19,9 @@ public class Fire {
         this.cn = cn;
         this.maze = maze;
         this.all_pieces = new CircularQueue(50);
+        this.pieces_for_erasing = new CircularQueue(50);
         all_pieces.enqueue(start_cr);
+        pieces_for_erasing.enqueue(start_cr);
         this.curr_cr = start_cr;
         this.timer = 1;
         this.dirs = new Coordinates[]{
@@ -58,6 +61,8 @@ public class Fire {
         if (maze[curr_cr.getY() + dir.getY()][curr_cr.getX() + dir.getX()] == ' ') {
             maze[curr_cr.getY() + dir.getY()][curr_cr.getX() + dir.getX()] = '-';
             all_pieces.enqueue(new Coordinates(curr_cr.getX() + dir.getX(), curr_cr.getY() + dir.getY()));
+            pieces_for_erasing.enqueue(new Coordinates(curr_cr.getX() + dir.getX(), curr_cr.getY() + dir.getY()));
+
             isPlaced = true;
         }
         count++;
@@ -72,7 +77,8 @@ public class Fire {
         }
     }
     void erase(char[][] maze) {
-        curr_cr = (Coordinates) all_pieces.dequeue();
+        all_pieces.dequeue();
+        curr_cr = (Coordinates) pieces_for_erasing.dequeue();
         maze[curr_cr.getY()][curr_cr.getX()] = ' ';
     }
 }

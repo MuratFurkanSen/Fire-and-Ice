@@ -8,10 +8,15 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
+import enigma.console.TextAttributes;
 import enigma.core.Enigma;
 
+import javax.swing.text.AttributeSet;
+
+import static java.awt.Color.*;
+
 public class Game {
-    static enigma.console.Console cn = Enigma.getConsole("Hallo", 100, 23, 25, 6);
+    static enigma.console.Console cn = Enigma.getConsole("Hallo", 75, 23, 20, 6);
 
     public KeyListener klis;
 
@@ -20,6 +25,7 @@ public class Game {
 	public int rkey; // key (for press/release)
 	//---------------------------------------------
 	static Random random = new Random();
+	int time = 0;
 
 
     Game() throws Exception {
@@ -42,13 +48,7 @@ public class Game {
 		}
 		maze_file.close();
 
-        // Game Maze
-        for (int i = 0; i <  maze.length; i++) {
-            for (int j = 0; j < maze[i].length; j++) {
-                cn.getTextWindow().setCursorPosition(j,i);
-                cn.getTextWindow().output(maze[i][j]);
-            }
-        }
+
 		klis = new KeyListener() {
 			public void keyTyped(KeyEvent e) {//silinebilir
 			}
@@ -69,37 +69,40 @@ public class Game {
 
 
 		CircularQueue inputQueue = new CircularQueue(10);
-		String lastPlayerDirection = "";
-        int time=0;
+
         int loopcount=0;
         Random rnd=new Random();
         int px=rnd.nextInt(52);
         int py=rnd.nextInt(22);
-		boolean isFireSpreadingDone = true;
-		int countForFireSpread = 0;
         while(maze[py][px]=='#') {
         	px=rnd.nextInt(52);
             py=rnd.nextInt(22);
         }
         Player player=new Player(px, py);
         updateMaze(maze, px, py, 'P', null);
+
+		new Ice(cn);
 		Ice[] ices = new Ice[50];
+		Coordinates[] iceCoordinates = new Coordinates[50];
+		boolean[] isIceSpreadDone = new boolean[50];
+		int[] countForIceSpread = new int[50];
 		int lastIceIndex = 0;
 
 		Fire[] fires = new Fire[50];
 		Coordinates[] fireCoordinates = new Coordinates[50];
+		boolean [] isFireSpreadingDone = new boolean[50];
+		int[] countForFireSpread = new int[50];
 		int lastFireIndex = 0;
 
 		generateInitialInputQueue(inputQueue);
+
 
         while (player.getHealth()>0) {
 
         	checkDamage(maze, px, py, player);
 			if(loopcount % 20 == 0){
-				addRandomElementToInputQueue(inputQueue);
-			}
-			if((inputQueue.peek().toString().equals("-") && loopcount % 2 == 0) || !isFireSpreadingDone){
-				if(isFireSpreadingDone){
+
+				if(inputQueue.peek().toString().equals("-")){
 					int rand_x;
 					int rand_y;
 					while(true){
@@ -109,34 +112,55 @@ public class Game {
 							break;
 						}
 					}
-					fireCoordinates[lastFireIndex] = new Coordinates(rand_x,rand_y);
+					fireCoordinates[lastFireIndex] = new Coordinates( rand_x,rand_y);
 					fires[lastFireIndex] = new Fire(cn,maze,fireCoordinates[lastFireIndex]);
-					isFireSpreadingDone = false;
-				}
-
-
-				for (int i = 0; i <  maze.length; i++) {
-					for (int j = 0; j < maze[i].length; j++) {
-						cn.getTextWindow().setCursorPosition(j,i);
-						cn.getTextWindow().output(maze[i][j]);
+					lastFireIndex++;
+				} else {
+					int rand_x;
+					int rand_y;
+					while(true){
+						rand_x = random.nextInt(53);
+						rand_y = random.nextInt(23);
+						if(maze[rand_y][rand_x] == ' '){
+							break;
+						}
 					}
+					maze[rand_y][rand_x] = inputQueue.peek().toString().charAt(0);
 				}
-
-				countForFireSpread++;
-				fires[lastFireIndex].increaseTimer();
-
-				if(countForFireSpread == 50){
-					lastFireIndex++ ;
-					isFireSpreadingDone = true;
-				}
-
+				printMaze(maze,player);
+				addRandomElementToInputQueue(inputQueue);
 			}
 
+			// Fire Spreading
+			for (int k = 0; k < fires.length; k++) {
+				if((!isFireSpreadingDone[k]) && fires[k] != null) {
+
+					fires[k].increaseTimer();
+					printMaze(maze,player);
+					countForFireSpread[k]++;
+					if(countForFireSpread[k] == 150){
+						isFireSpreadingDone[k] = true;
+					}
+				}
+			}
+
+			// Ice Spreading
+			for (int k = 0; k < ices.length; k++) {
+				if((!isIceSpreadDone[k]) && ices[k] != null) {
+
+					ices[k].increaseTimer(maze);
+					printMaze(maze,player);
+					countForIceSpread[k]++;
+					if(countForIceSpread[k] == 125){
+						isIceSpreadDone[k] = true;
+					}
+				}
+			}
+
+
 			if (keypr == 1) { // if keyboard button pressed
-				if (rkey == KeyEvent.VK_LEFT || rkey == KeyEvent.VK_RIGHT || rkey == KeyEvent.VK_UP
-						|| rkey == KeyEvent.VK_DOWN) {
+
 					if (rkey == KeyEvent.VK_LEFT) {
-						lastPlayerDirection = "left";
 
 						if(maze[py][px-1]!='#'&&maze[py][px-1]!='+'&&maze[py][px-1]!='-') {
 							updateMaze(maze, px, py, ' ', null);
@@ -146,10 +170,10 @@ public class Game {
 							updateMaze(maze, px, py, 'P', null);
 						}
 						player.setDirection(-1,0);//direction left to use packed ice
+						player.setCoordinates(px - 1,py);
 					}
 
-					if (rkey == KeyEvent.VK_RIGHT) {
-						lastPlayerDirection = "right";
+					else if (rkey == KeyEvent.VK_RIGHT) {
 
 						if(maze[py][px+1]!='#'&&maze[py][px+1]!='+'&&maze[py][px+1]!='-') {
 						updateMaze(maze, px, py, ' ', null);
@@ -161,9 +185,9 @@ public class Game {
 						int y = 0;
 						}
 						player.setDirection(1,0);
+						player.setCoordinates(px +1 ,py);
 					}
-					if (rkey == KeyEvent.VK_UP) {
-						lastPlayerDirection = "up";
+					else if (rkey == KeyEvent.VK_UP) {
 
 						if(maze[py-1][px]!='#'&&maze[py-1][px]!='+'&&maze[py-1][px]!='-') {
 						updateMaze(maze, px, py, ' ', null);
@@ -173,9 +197,9 @@ public class Game {
 						updateMaze(maze, px, py, 'P', null);
 						}
 						player.setDirection(0,-1);
+						player.setCoordinates(px,py - 1);
 					}
-					if (rkey == KeyEvent.VK_DOWN) {
-						lastPlayerDirection = "down";
+					else if (rkey == KeyEvent.VK_DOWN) {
 
 						if(maze[py+1][px]!='#'&&maze[py+1][px]!='+'&&maze[py+1][px]!='-') {
 							updateMaze(maze, px, py, ' ', null);
@@ -185,99 +209,28 @@ public class Game {
 							updateMaze(maze, px, py, 'P', null);
 							}
 						player.setDirection(0,1);
+						player.setCoordinates(px,py + 1
+						);
+					}
+					else if (rkey == KeyEvent.VK_SPACE && player.getPackedIceCount() > 0) {
+						ices[lastIceIndex] = new Ice(player.getCoordinates(),player.getDirection());
+						lastIceIndex++;
+						player.usePackedIce();
 					}
 
-//					if(rkey == KeyEvent.VK_SPACE){
-//						switch (lastPlayerDirection){
-//							case "left":
-//								fireCoordinates[lastFireIndex] = new Coordinates(px - 1,py);
-//								for (int k = 0; k < 50; k++) {
-//									fires[lastFireIndex].increaseTimer();
-//									clearScreen(maze);
-//									for (int i = 0; i <  maze.length; i++) {
-//										for (int j = 0; j < maze[i].length; j++) {
-//											cn.getTextWindow().setCursorPosition(j,i);
-//											cn.getTextWindow().output(maze[i][j]);
-//										}
-//									}
-//									Thread.sleep(800);
-//								}
-//								lastFireIndex++ ;
-//								break;
-//							case "right":
-//								fireCoordinates[lastFireIndex] = new Coordinates(px + 1,py);
-//								for (int k = 0; k < 50; k++) {
-//									fires[lastFireIndex].increaseTimer();
-//									clearScreen(maze);
-//									for (int i = 0; i <  maze.length; i++) {
-//										for (int j = 0; j < maze[i].length; j++) {
-//											cn.getTextWindow().setCursorPosition(j,i);
-//											cn.getTextWindow().output(maze[i][j]);
-//										}
-//									}
-//									Thread.sleep(800);
-//								}
-//								lastFireIndex++ ;
-//								break;
-//							case "up":
-//								fireCoordinates[lastFireIndex] = new Coordinates(px,py - 1);
-//								for (int k = 0; k < 50; k++) {
-//									fires[lastFireIndex].increaseTimer();
-//									clearScreen(maze);
-//									for (int i = 0; i <  maze.length; i++) {
-//										for (int j = 0; j < maze[i].length; j++) {
-//											cn.getTextWindow().setCursorPosition(j,i);
-//											cn.getTextWindow().output(maze[i][j]);
-//										}
-//									}
-//									Thread.sleep(800);
-//								}
-//								lastFireIndex++ ;
-//								break;
-//							case "down":
-//								fireCoordinates[lastFireIndex] = new Coordinates(px,py + 1);
-//								for (int k = 0; k < 50; k++) {
-//									fires[lastFireIndex].increaseTimer();
-//									clearScreen(maze);
-//									for (int i = 0; i <  maze.length; i++) {
-//										for (int j = 0; j < maze[i].length; j++) {
-//											cn.getTextWindow().setCursorPosition(j,i);
-//											cn.getTextWindow().output(maze[i][j]);
-//										}
-//									}
-//									Thread.sleep(800);
-//								}
-//								lastFireIndex++ ;
-//								break;
-//						}
-//					}
+					printMaze(maze,player);
 
-				}
-				/*
-				else if (rkey == KeyEvent.VK_SPACE){
-					ices[lastIceIndex] = new Ice(player.,player.getDirection())
-				}
-				*/
+
+
+
 
 				keypr = 0; // last action
 			}
-			cn.getTextWindow().setCursorPosition(55, 10);
-        	System.out.println("P.Health : "+player.getHealth() + " ");
-			cn.getTextWindow().setCursorPosition(70, 10);
-        	System.out.println("   ");
-			cn.getTextWindow().setCursorPosition(55, 15);
-        	System.out.println("P.Score  : "+player.getScore());
-			cn.getTextWindow().setCursorPosition(55, 20);
-        	System.out.println("P.Ice    : "+player.getPackedIceCount());
+
         	Thread.sleep(100);
-			for (int i = 0; i < ices.length; i++) {
-				if (ices[i] != null){
-					ices[i].increaseTimer(maze);
-				}
-			}
 
         	loopcount++;
-        	if (loopcount%10==0) {
+        	if (loopcount % 10==0) {
 				time++;
 			}
 		}
@@ -305,7 +258,21 @@ public class Game {
 			p.decreaseHealth(1);
 		}
 		else if(maze[py][px-1]=='C'||maze[py-1][px]=='C'||maze[py+1][px]=='C'||maze[py][px+1]=='C') {
-			p.decreaseHealth(50);
+			if(maze[py][px - 1]=='C'){
+				p.decreaseHealth(50);
+			}
+			if(maze[py][px + 1]=='C'){
+				p.decreaseHealth(50);
+			}
+			if(maze[py + 1][px]=='C'){
+				p.decreaseHealth(50);
+			}
+			if(maze[py - 1][px]=='C'){
+				p.decreaseHealth(50);
+			}
+
+
+
 		}
     }
 
@@ -318,13 +285,51 @@ public class Game {
     // Usage
     //updateMaze(maze, 5,5,'A', red);
 
-	public void clearScreen(char[][]maze){
+	public void cleanScreen(char[][]maze){
 		for (int i = 0; i <  maze.length; i++) {
 			for (int j = 0; j < maze[i].length; j++) {
 				cn.getTextWindow().setCursorPosition(j,i);
 				cn.getTextWindow().output(' ');
 			}
 		}
+	}
+
+	public  void printMaze(char[][] maze,Player player){
+		TextAttributes wallColor = new TextAttributes(blue, blue);
+		TextAttributes iceColor = new TextAttributes(cyan);
+		TextAttributes fireColor = new TextAttributes(red);
+
+		for (int i = 0; i <  maze.length; i++) {
+			for (int j = 0; j < maze[i].length; j++) {
+				if(maze[i][j] == '#'){
+					cn.getTextWindow().setCursorPosition(j,i);
+					cn.getTextWindow().output(maze[i][j],wallColor);
+				}
+				else if (maze[i][j] == '+'){
+					cn.getTextWindow().setCursorPosition(j,i);
+					cn.getTextWindow().output(maze[i][j],iceColor);
+				}
+				else if (maze[i][j] == '-'){
+					cn.getTextWindow().setCursorPosition(j,i);
+					cn.getTextWindow().output(maze[i][j],fireColor);
+				}
+				else{
+					cn.getTextWindow().setCursorPosition(j,i);
+					cn.getTextWindow().output(maze[i][j]);
+				}
+
+			}
+		}
+		cn.getTextWindow().setCursorPosition(55, 10);
+		System.out.println("P.Health : "+player.getHealth() + " ");
+		cn.getTextWindow().setCursorPosition(70, 10);
+		System.out.println("   ");
+		cn.getTextWindow().setCursorPosition(55, 15);
+		System.out.println("P.Score  : "+player.getScore());
+		cn.getTextWindow().setCursorPosition(55, 20);
+		System.out.println("P.Ice    : "+player.getPackedIceCount());
+		cn.getTextWindow().setCursorPosition(55, 1);
+		System.out.println(time);
 	}
 
 	public static void generateInitialInputQueue(CircularQueue inputQueue){
@@ -341,19 +346,20 @@ public class Game {
 	}
 
 	public static void printInputQueue(CircularQueue inputQueue){
+		TextAttributes blackWhite = new TextAttributes(Color.black,Color.white);
 		cn.getTextWindow().setCursorPosition(55,5);
-		System.out.print("<<<<<<<<<<");
+		cn.getTextWindow().output("<<<<<<<<<<",blackWhite);
 		cn.getTextWindow().setCursorPosition(55,7);
-		System.out.print("<<<<<<<<<<");
+		cn.getTextWindow().output("<<<<<<<<<<",blackWhite);
 		cn.getTextWindow().setCursorPosition(55,6);
-		for (int i = 0; i < inputQueue.size(); i++) {
+		for (int i = 0; i < 10; i++) {
 			System.out.print(inputQueue.peek());
 			inputQueue.enqueue(inputQueue.dequeue());
 		}
 	}
 
 	public static Object generateInputQueueElement(){
-		Object returnData = null;
+		Object returnData;
 		int randomNumber = random.nextInt(30);
 		if(randomNumber < 5){
 			returnData = "1";
@@ -368,7 +374,6 @@ public class Game {
 		}
 		else returnData = "C";
 		return returnData;
-
 	}
 
 
