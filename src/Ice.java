@@ -11,6 +11,7 @@ public class Ice {
     private Stack all_pieces;
     private Stack temp_stack;
 
+    char[][]maze;
     private Coordinates dirs;
     private int timer;
     boolean isLastPlaced = false;
@@ -18,25 +19,27 @@ public class Ice {
 
     Ice(enigma.console.Console cn){
         this.cn = cn;
-    }
+    }//bunu sor
 
+    //fonksiyonlara maze vermek yerine ice objesi oluşturulurken verilebilir
 
-    Ice(Coordinates start_cr, Coordinates dirs){
+    Ice(Coordinates start_cr, Coordinates dirs,char[][] maze){//thisleri sildim?
+        this.maze=maze;
         this.start_cr = start_cr;
-        this.curr_cr = start_cr;
+        curr_cr = start_cr;
         this.dirs = dirs;
-        this.all_pieces = new Stack(25);
-        this.temp_stack = new Stack(25);
-        this.timer = 0;
+        all_pieces = new Stack(25);
+        temp_stack = new Stack(25);
+        timer = 0;
     }
-    void increaseTimer(char[][] maze){
+    void increaseTimer(){
         timer++;
         if (timer<=25){
-            spread(maze);
+            spread();
 
         }
         else if (!temp_stack.isEmpty()&&timer>=100) {
-            erase(maze);
+            erase();
         }
         if (all_pieces.size() == 25){
             while (!all_pieces.isEmpty()){
@@ -44,10 +47,10 @@ public class Ice {
             }
         }
     }
-    void spread(char[][] maze){
+    void spread(){
         isLastPlaced = false;
         if (maze[curr_cr.getY()+dirs.getY()][curr_cr.getX()+dirs.getX()] == ' '){
-            updateMaze(maze,curr_cr.getY()+dirs.getY(), curr_cr.getX()+dirs.getX(),'+', cyan);
+            updateMaze(curr_cr.getY()+dirs.getY(), curr_cr.getX()+dirs.getX(),'+', cyan);
             isLastPlaced = true;
             curr_cr =new Coordinates(curr_cr.getX()+dirs.getX(),curr_cr.getY()+dirs.getY());
             temp_stack.push(curr_cr);
@@ -57,7 +60,7 @@ public class Ice {
             int new_x = 0;
             int new_y = 0;
             if (dirs.getX() == 0){
-               new_x = randDirs[random.nextInt(1,2)];
+                new_x = randDirs[random.nextInt(1,2)];
             }
             else {
                 new_y = randDirs[random.nextInt(1,2)];
@@ -86,7 +89,7 @@ public class Ice {
         if (!isLastPlaced){
             curr_cr = (Coordinates) all_pieces.peek();
             temp_stack.push(all_pieces.pop());
-            spread(maze);
+            spread();
 
         }
         else{
@@ -96,11 +99,11 @@ public class Ice {
         }
     }
 
-    void erase(char[][] maze){
+    void erase(){
         curr_cr = (Coordinates) temp_stack.pop();
         maze[curr_cr.getY()][curr_cr.getX()] = ' ';
     }
-    public void updateMaze(char[][] maze, int y, int x, char ch, TextAttributes color) {
+    public void updateMaze( int y, int x, char ch, TextAttributes color) {
         maze[y][x] = ch;
         cn.getTextWindow().output(x, y, ch,color);
     }

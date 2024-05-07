@@ -12,7 +12,7 @@ import enigma.core.Enigma;
 
 import static java.awt.Color.*;
 
-public class Game {
+public class FireandIce {
     static enigma.console.Console cn = Enigma.getConsole("Hallo", 75, 23, 20, 6);
 
     public KeyListener klis;
@@ -22,13 +22,35 @@ public class Game {
     public int rkey; // key (for press/release)
     //---------------------------------------------
     static Random random = new Random();
-    static int maxComputerNum = 4;
+    static int maxComputerNum = 4;//optional
     static CircularQueue pawnQueue = new CircularQueue(maxComputerNum);
 
     public static char[][] maze = new char[23][53];
 
+    Player player;
 
-    Game() throws Exception {
+    int time;
+    int loopcount;
+    Random rnd;
+    int px ;
+    int py;
+
+    Ice[] ices;
+    Coordinates[] iceCoordinates ;
+    boolean[] isIceSpreadDone ;
+    int[] countForIceSpread ;
+    int lastIceIndex;
+
+    Fire[] fires = new Fire[50];
+    Coordinates[] fireCoordinates = new Coordinates[50];
+    boolean[] isFireSpreadingDone = new boolean[50];
+    int[] countForFireSpread = new int[50];
+    int lastFireIndex = 0;
+
+    ComputerPawn pawn;
+    CircularQueue inputQueue;
+
+    FireandIce() throws Exception {
 
         Scanner maze_file = null;
         try {
@@ -52,6 +74,7 @@ public class Game {
             }
         }
         maze_file.close();
+        //maze textinde neden computer arıyoruz
 
 
         klis = new KeyListener() {
@@ -68,46 +91,45 @@ public class Game {
             public void keyReleased(KeyEvent e) {//silinebilir
             }
         };
-        Game.cn.getTextWindow().addKeyListener(klis);
+        FireandIce.cn.getTextWindow().addKeyListener(klis);
         // ----------------------------------------------------
 
 
-        CircularQueue inputQueue = new CircularQueue(10);
-        String lastPlayerDirection = "";
-        int time = 0;
-        int loopcount = 0;
-        Random rnd = new Random();
-        int px = rnd.nextInt(52);
-        int py = rnd.nextInt(22);
+        inputQueue = new CircularQueue(10);
+        time = 0;
+        loopcount = 0;
+        rnd = new Random();
+        px = rnd.nextInt(52);
+        py = rnd.nextInt(22);
         while (maze[py][px] == '#') {
             px = rnd.nextInt(52);
             py = rnd.nextInt(22);
         }
-        Player player = new Player(px, py);
-        updateMaze(maze, px, py, 'P', null);
+        player = new Player(px, py);
+        updateMaze( px, py, 'P', null);
 
         new Ice(cn);
-        Ice[] ices = new Ice[50];
-        Coordinates[] iceCoordinates = new Coordinates[50];
-        boolean[] isIceSpreadDone = new boolean[50];
-        int[] countForIceSpread = new int[50];
-        int lastIceIndex = 0;
+        ices = new Ice[50];
+        iceCoordinates = new Coordinates[50];
+        isIceSpreadDone = new boolean[50];
+        countForIceSpread = new int[50];
+        lastIceIndex = 0;
 
-        Fire[] fires = new Fire[50];
-        Coordinates[] fireCoordinates = new Coordinates[50];
-        boolean[] isFireSpreadingDone = new boolean[50];
-        int[] countForFireSpread = new int[50];
-        int lastFireIndex = 0;
+        fires = new Fire[50];
+        fireCoordinates = new Coordinates[50];
+        isFireSpreadingDone = new boolean[50];
+        countForFireSpread = new int[50];
+        lastFireIndex = 0;
 
-        generateInitialInputQueue(inputQueue);
+        generateInitialInputQueue();
 
 
         while (player.getHealth() > 0) {
 
-            checkDamage(maze, px, py, player);
+            checkDamage();
 
             if (loopcount % 20 == 0) {
-
+                //if input queue has fire adds a new fire object
                 if (inputQueue.peek().toString().equals("-")) {
                     int rand_x;
                     int rand_y;
@@ -121,7 +143,9 @@ public class Game {
                     fireCoordinates[lastFireIndex] = new Coordinates(rand_x, rand_y);
                     fires[lastFireIndex] = new Fire(cn, maze, fireCoordinates[lastFireIndex]);
                     lastFireIndex++;
-                } else if (inputQueue.peek().toString().equals("C")) {
+                }
+                //if input queue has computer adds a new computer pawn
+                else if (inputQueue.peek().toString().equals("C")) {
                     if (pawnQueue.size()<maxComputerNum) {
 
                         int rand_x;
@@ -134,13 +158,15 @@ public class Game {
                             }
 
                         }
-                        ComputerPawn pawn = new ComputerPawn(rand_y,rand_x);
+                        pawn = new ComputerPawn(rand_y,rand_x);
                         //pawn.setCoordinates(rand_x,rand_y);
                         pawnQueue.enqueue(pawn);
                         maze[rand_y][rand_x] = 'C';
                     }
 
-                } else {
+                }
+                //else adds the char to the maze array
+                else {
                     int rand_x;
                     int rand_y;
                     while (true) {
@@ -152,8 +178,8 @@ public class Game {
                     }
                     maze[rand_y][rand_x] = inputQueue.peek().toString().charAt(0);
                 }
-                printMaze(maze, player);
-                addRandomElementToInputQueue(inputQueue);
+                printMaze();
+                addRandomElementToInputQueue();
             }
 
             // Fire Spreading
@@ -161,7 +187,7 @@ public class Game {
                 if ((!isFireSpreadingDone[k]) && fires[k] != null) {
 
                     fires[k].increaseTimer();
-                    printMaze(maze, player);
+                    printMaze();
                     countForFireSpread[k]++;
                     if (countForFireSpread[k] == 150) {
                         isFireSpreadingDone[k] = true;
@@ -173,8 +199,8 @@ public class Game {
             for (int k = 0; k < ices.length; k++) {
                 if ((!isIceSpreadDone[k]) && ices[k] != null) {
 
-                    ices[k].increaseTimer(maze);
-                    printMaze(maze, player);
+                    ices[k].increaseTimer();
+                    printMaze();
                     countForIceSpread[k]++;
                     if (countForIceSpread[k] == 125) {
                         isIceSpreadDone[k] = true;
@@ -183,65 +209,64 @@ public class Game {
             }
 
 
-
-            if (keypr == 1) { // if keyboard button pressed
+            // if keyboard button pressed
+            if (keypr == 1) {
 
                 if (rkey == KeyEvent.VK_LEFT) {
 
                     if (maze[py][px - 1] != '#' && maze[py][px - 1] != '+' && maze[py][px - 1] != '-') {
-                        updateMaze(maze, px, py, ' ', null);
+                        updateMaze( px, py, ' ', null);
                         px--;
-                        checkTreasure(maze, px, py, player);
-                        checkIcePack(maze, px, py, player);
-                        updateMaze(maze, px, py, 'P', null);
+                        checkTreasure();
+                        checkIcePack();
+                        updateMaze( px, py, 'P', null);
                     }
                     player.setDirection(-1, 0);//direction left to use packed ice
-                    player.setCoordinates(px - 1, py);
+                    player.setCoordinates(px , py);
                 } else if (rkey == KeyEvent.VK_RIGHT) {
 
                     if (maze[py][px + 1] != '#' && maze[py][px + 1] != '+' && maze[py][px + 1] != '-') {
-                        updateMaze(maze, px, py, ' ', null);
+                        updateMaze( px, py, ' ', null);
                         px++;
-                        checkTreasure(maze, px, py, player);
-                        checkIcePack(maze, px, py, player);
-                        updateMaze(maze, px, py, 'P', null);
+                        checkTreasure();
+                        checkIcePack();
+                        updateMaze( px, py, 'P', null);
                         int x = 1;
                         int y = 0;
                     }
                     player.setDirection(1, 0);
-                    player.setCoordinates(px + 1, py);
+                    player.setCoordinates(px, py);
                 } else if (rkey == KeyEvent.VK_UP) {
 
                     if (maze[py - 1][px] != '#' && maze[py - 1][px] != '+' && maze[py - 1][px] != '-') {
-                        updateMaze(maze, px, py, ' ', null);
+                        updateMaze( px, py, ' ', null);
                         py--;
-                        checkTreasure(maze, px, py, player);
-                        checkIcePack(maze, px, py, player);
-                        updateMaze(maze, px, py, 'P', null);
+                        checkTreasure();
+                        checkIcePack();
+                        updateMaze( px, py, 'P', null);
                     }
                     player.setDirection(0, -1);
-                    player.setCoordinates(px, py - 1);
+                    player.setCoordinates(px, py);
                 } else if (rkey == KeyEvent.VK_DOWN) {
 
                     if (maze[py + 1][px] != '#' && maze[py + 1][px] != '+' && maze[py + 1][px] != '-') {
-                        updateMaze(maze, px, py, ' ', null);
+                        updateMaze( px, py, ' ', null);
                         py++;
-                        checkTreasure(maze, px, py, player);
-                        checkIcePack(maze, px, py, player);
-                        updateMaze(maze, px, py, 'P', null);
+                        checkTreasure();
+                        checkIcePack();
+                        updateMaze( px, py, 'P', null);
                     }
                     player.setDirection(0, 1);
-                    player.setCoordinates(px, py + 1
-                    );
+                    player.setCoordinates(px, py );
                 } else if (rkey == KeyEvent.VK_SPACE && player.getPackedIceCount() > 0) {
-                    ices[lastIceIndex] = new Ice(player.getCoordinates(), player.getDirection());
+                    ices[lastIceIndex] = new Ice(player.getCoordinates(), player.getDirection(),maze);
                     lastIceIndex++;
                     player.usePackedIce();
                 } else if (rkey == KeyEvent.VK_Q) { // Hata kontrollerinde oyunu durdurmak için (silinecek)
-                    printMaze(maze, player);
+                    printMaze();
                     Thread.sleep(50000);
                 }
-                printMaze(maze, player);
+                printMaze();
 
 
                 keypr = 0; // last action
@@ -258,37 +283,37 @@ public class Game {
 
     }
 
-    void checkTreasure(char[][] maze, int px, int py, Player p) {
+    void checkTreasure() {
         if (maze[py][px] == '1') {
-            p.addScore(3);
+            player.addScore(3);
         } else if (maze[py][px] == '2') {
-            p.addScore(10);
+            player.addScore(10);
         } else if (maze[py][px] == '3') {
-            p.addScore(30);
+            player.addScore(30);
         }
     }
 
-    void checkIcePack(char[][] maze, int px, int py, Player p) {
+    void checkIcePack() {
         if (maze[py][px] == '@') {
-            p.addPackedIce();
+            player.addPackedIce();
         }
     }
 
-    void checkDamage(char[][] maze, int px, int py, Player p) {//bir kere kullandım çok da gerekli değil ama şık
+    void checkDamage() {//bir kere kullandım çok da gerekli değil ama şık
         if (maze[py][px - 1] == '-' || maze[py - 1][px] == '-' || maze[py + 1][px] == '-' || maze[py][px + 1] == '-') {
-            p.decreaseHealth(1);
+            player.decreaseHealth(1);
         } else if (maze[py][px - 1] == 'C' || maze[py - 1][px] == 'C' || maze[py + 1][px] == 'C' || maze[py][px + 1] == 'C') {
             if (maze[py][px - 1] == 'C') {
-                p.decreaseHealth(50);
+                player.decreaseHealth(50);
             }
             if (maze[py][px + 1] == 'C') {
-                p.decreaseHealth(50);
+                player.decreaseHealth(50);
             }
             if (maze[py + 1][px] == 'C') {
-                p.decreaseHealth(50);
+                player.decreaseHealth(50);
             }
             if (maze[py - 1][px] == 'C') {
-                p.decreaseHealth(50);
+                player.decreaseHealth(50);
             }
 
 
@@ -296,15 +321,15 @@ public class Game {
     }
 
 
-    // Maze Update Function
-    public void updateMaze(char[][] maze, int x, int y, char ch, TextAttributes color) {
+    // Maze Update Function//artık gerekli değil??hepsinin yerine fonksiyonun ilk satırını yazabiliriz
+    public void updateMaze(int x, int y, char ch, TextAttributes color) {
         maze[y][x] = ch;
         cn.getTextWindow().output(x, y, ch);
     }
     // Usage
-    //updateMaze(maze, 5,5,'A', red);
+    //updateMaze( 5,5,'A', red);
 
-    public void cleanScreen(char[][] maze) {
+    public void cleanScreen() {
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[i].length; j++) {
                 cn.getTextWindow().setCursorPosition(j, i);
@@ -313,7 +338,7 @@ public class Game {
         }
     }
 
-    public static void printMaze(char[][] maze, Player player) {
+    public void printMaze() {
         TextAttributes wallColor = new TextAttributes(blue, blue);
         TextAttributes iceColor = new TextAttributes(cyan);
         TextAttributes fireColor = new TextAttributes(red);
@@ -340,30 +365,39 @@ public class Game {
 
             }
         }
+
+        //time
+        cn.getTextWindow().setCursorPosition(55, 2);
+        System.out.println("Time     : " + time);
+        //for player
         cn.getTextWindow().setCursorPosition(55, 10);
         System.out.println("P.Health : " + player.getHealth() + " ");
-        cn.getTextWindow().setCursorPosition(70, 10);
-        System.out.println("   ");
-        cn.getTextWindow().setCursorPosition(55, 15);
+        cn.getTextWindow().setCursorPosition(55, 12);
         System.out.println("P.Score  : " + player.getScore());
-        cn.getTextWindow().setCursorPosition(55, 20);
-        System.out.println("P.Ice    : " + player.getPackedIceCount());
+        cn.getTextWindow().setCursorPosition(55, 14);
+        System.out.println("P.Ice    : " + player.getPackedIceCount()+"    ");
+        //for computer
+        // Değişecek!!
+        cn.getTextWindow().setCursorPosition(55, 17);
+        System.out.println("C.Health : ");
+        cn.getTextWindow().setCursorPosition(55, 19);
+        System.out.println("C.Score  : " );
     }
 
-    public static void generateInitialInputQueue(CircularQueue inputQueue) {
+    public void generateInitialInputQueue() {
         for (int i = 0; i < 10; i++) {
             inputQueue.enqueue(generateInputQueueElement());
         }
-        printInputQueue(inputQueue);
+        printInputQueue();
     }
 
-    public static void addRandomElementToInputQueue(CircularQueue inputQueue) {
+    public void addRandomElementToInputQueue() {
         inputQueue.dequeue();
         inputQueue.enqueue(generateInputQueueElement());
-        printInputQueue(inputQueue);
+        printInputQueue();
     }
 
-    public static void printInputQueue(CircularQueue inputQueue) {
+    public void printInputQueue() {
         TextAttributes blackWhite = new TextAttributes(Color.black, Color.white);
         cn.getTextWindow().setCursorPosition(55, 5);
         cn.getTextWindow().output("<<<<<<<<<<", blackWhite);
@@ -414,7 +448,7 @@ public class Game {
         return maze;
     }
 
-    public boolean isValidDestination(int x, int y, char[][] maze) {
+    public boolean isValidDestination(int x, int y) {
 
         boolean isNotWall = maze[y][x] != '#';
         boolean isNotFire = maze[y][x] != '-';

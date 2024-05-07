@@ -1,3 +1,4 @@
+
 import java.util.Random;
 
 public class Fire {
@@ -15,16 +16,16 @@ public class Fire {
     private int count;
     Random random = new Random();
 
-    Fire(enigma.console.Console cn, char[][] maze,Coordinates start_cr) {
+    Fire(enigma.console.Console cn, char[][] maze,Coordinates start_cr) {//thisleri sildim?
         this.cn = cn;
         this.maze = maze;
-        this.all_pieces = new CircularQueue(50);
-        this.pieces_for_erasing = new CircularQueue(50);
+        all_pieces = new CircularQueue(50);
+        pieces_for_erasing = new CircularQueue(50);
         all_pieces.enqueue(start_cr);
         pieces_for_erasing.enqueue(start_cr);
-        this.curr_cr = start_cr;
-        this.timer = 1;
-        this.dirs = new Coordinates[]{
+        curr_cr = start_cr;
+        timer = 1;
+        dirs = new Coordinates[]{
                 new Coordinates(0, -1),
                 new Coordinates(1, 0),
                 new Coordinates(0, 1),
@@ -40,21 +41,22 @@ public class Fire {
                 dir_rot = -1;
                 break;
         }
-        dir_index=0;
-        dir_rot=1;
+        //hatırladığım kadarıyla gerek yok
+        //dir_index=0;
+       // dir_rot=1;
     }
 
 
     void increaseTimer() {
         timer++;
         if (timer <= 50) {
-            spread(maze);
+            spread();
         } else if (!all_pieces.isEmpty() && timer >= 100) {
-            erase(maze);
+            erase();
         }
     }
 
-    void spread(char[][]maze) {
+    void spread() {
         isPlaced = false;
         Coordinates dir = dirs[dir_index % dirs.length];
         dir_index += dir_rot;
@@ -72,10 +74,10 @@ public class Fire {
             dir_index += dir_rot*dirs.length*-1;
         }
         if (!isPlaced){
-            spread(maze);
+            spread();
         }
     }
-    void erase(char[][] maze) {
+    void erase() {
         all_pieces.dequeue();
         curr_cr = (Coordinates) pieces_for_erasing.dequeue();
         maze[curr_cr.getY()][curr_cr.getX()] = ' ';

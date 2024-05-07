@@ -16,5 +16,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="Enigma-Edited2" level="project" />
   </component>
 </module>
