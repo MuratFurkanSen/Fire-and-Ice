@@ -21,7 +21,7 @@ public class FireandIce {
     public int rkey; // key (for press/release)
     //---------------------------------------------
     static Random random = new Random();
-    static int maxComputerNum = 4;//optional
+    static int maxComputerNum = 30;//optional
     static CircularQueue pawnQueue = new CircularQueue(maxComputerNum);
 
     public static char[][] maze = new char[23][53];
@@ -31,14 +31,14 @@ public class FireandIce {
     static int time;
     int loopcount;
     Random rnd;
-    int px ;
+    int px;
     int py;
     boolean hardMode = false;
 
     Ice[] ices;
-    Coordinates[] iceCoordinates ;
-    boolean[] isIceSpreadDone ;
-    int[] countForIceSpread ;
+    Coordinates[] iceCoordinates;
+    boolean[] isIceSpreadDone;
+    int[] countForIceSpread;
     int lastIceIndex;
 
     Fire[] fires = new Fire[50];
@@ -66,8 +66,8 @@ public class FireandIce {
             if (!input.equals("")) {
                 maze[index] = input.toCharArray();
                 for (int i = 0; i < maze[index].length; i++) {
-                    if(maze[index][i] == 'C'){
-                        pawnQueue.enqueue(new ComputerPawn(index,i));
+                    if (maze[index][i] == 'C') {
+                        pawnQueue.enqueue(new ComputerPawn(index, i));
                     }
                 }
                 index++;
@@ -106,7 +106,7 @@ public class FireandIce {
             py = rnd.nextInt(22);
         }
         player = new Player(px, py);
-        updateMaze( px, py, 'P', null);
+        updateMaze(px, py, 'P', null);
 
         new Ice(cn);
         ices = new Ice[100];
@@ -146,7 +146,7 @@ public class FireandIce {
                 }
                 //if input queue has computer adds a new computer pawn
                 else if (inputQueue.peek().toString().equals("C")) {
-                    if (pawnQueue.size()<maxComputerNum) {
+                    if (pawnQueue.size() < maxComputerNum) {
 
                         int rand_x;
                         int rand_y;
@@ -158,7 +158,7 @@ public class FireandIce {
                             }
 
                         }
-                        pawn = new ComputerPawn(rand_y,rand_x);
+                        pawn = new ComputerPawn(rand_y, rand_x);
                         //pawn.setCoordinates(rand_x,rand_y);
                         pawnQueue.enqueue(pawn);
                         maze[rand_y][rand_x] = 'C';
@@ -215,22 +215,22 @@ public class FireandIce {
                 if (rkey == KeyEvent.VK_LEFT) {
 
                     if (maze[py][px - 1] != '#' && maze[py][px - 1] != '+' && maze[py][px - 1] != '-' && maze[py][px - 1] != 'C') {
-                        updateMaze( px, py, ' ', null);
+                        updateMaze(px, py, ' ', null);
                         px--;
                         checkTreasure();
                         checkIcePack();
-                        updateMaze( px, py, 'P', null);
+                        updateMaze(px, py, 'P', null);
                     }
                     player.setDirection(-1, 0);//direction left to use packed ice
-                    player.setCoordinates(px , py);
+                    player.setCoordinates(px, py);
                 } else if (rkey == KeyEvent.VK_RIGHT) {
 
                     if (maze[py][px + 1] != '#' && maze[py][px + 1] != '+' && maze[py][px + 1] != '-' && maze[py][px + 1] != 'C') {
-                        updateMaze( px, py, ' ', null);
+                        updateMaze(px, py, ' ', null);
                         px++;
                         checkTreasure();
                         checkIcePack();
-                        updateMaze( px, py, 'P', null);
+                        updateMaze(px, py, 'P', null);
                         int x = 1;
                         int y = 0;
                     }
@@ -239,29 +239,29 @@ public class FireandIce {
                 } else if (rkey == KeyEvent.VK_UP) {
 
                     if (maze[py - 1][px] != '#' && maze[py - 1][px] != '+' && maze[py - 1][px] != '-' && maze[py - 1][px] != 'C') {
-                        updateMaze( px, py, ' ', null);
+                        updateMaze(px, py, ' ', null);
                         py--;
                         checkTreasure();
                         checkIcePack();
-                        updateMaze( px, py, 'P', null);
+                        updateMaze(px, py, 'P', null);
                     }
                     player.setDirection(0, -1);
                     player.setCoordinates(px, py);
                 } else if (rkey == KeyEvent.VK_DOWN) {
 
                     if (maze[py + 1][px] != '#' && maze[py + 1][px] != '+' && maze[py + 1][px] != '-' && maze[py + 1][px] != 'C') {
-                        updateMaze( px, py, ' ', null);
+                        updateMaze(px, py, ' ', null);
                         py++;
                         checkTreasure();
                         checkIcePack();
-                        updateMaze( px, py, 'P', null);
+                        updateMaze(px, py, 'P', null);
 
                     }
                     player.setDirection(0, 1);
-                    player.setCoordinates(px, py );
+                    player.setCoordinates(px, py);
                 } else if (rkey == KeyEvent.VK_SPACE && player.getPackedIceCount() > 0) {
-                    if(maze[py + 1][px] == ' ' || maze[py][px + 1] == ' ' || maze[py - 1][px] == ' ' || maze[py][px - 1] == ' '){
-                        ices[lastIceIndex] = new Ice(player.getCoordinates(), player.getDirection(),maze);
+                    if (maze[py + 1][px] == ' ' || maze[py][px + 1] == ' ' || maze[py - 1][px] == ' ' || maze[py][px - 1] == ' ') {
+                        ices[lastIceIndex] = new Ice(player.getCoordinates(), player.getDirection(), maze);
                         lastIceIndex++;
                         player.usePackedIce();
                     }
@@ -287,18 +287,20 @@ public class FireandIce {
             if (loopcount % 10 == 0) {
                 time++;
             }
-            if(loopcount %4 == 0){
+            if (loopcount % 4 == 0) {
                 recalculatePawnPaths();
                 movePawnsHardMode();
                 printMaze();
             }
         }
+        clearScreen();
 
     }
 
     void checkTreasure() {
         if (maze[py][px] == '1') {
             player.addScore(3);
+
         } else if (maze[py][px] == '2') {
             player.addScore(10);
         } else if (maze[py][px] == '3') {
@@ -389,16 +391,16 @@ public class FireandIce {
         cn.getTextWindow().setCursorPosition(55, 12);
         System.out.println("P.Score  : " + player.getScore());
         cn.getTextWindow().setCursorPosition(55, 14);
-        System.out.println("P.Ice    : " + player.getPackedIceCount()+"    ");
+        System.out.println("P.Ice    : " + player.getPackedIceCount() + "    ");
         //for computer
         // Değişecek!!
         cn.getTextWindow().setCursorPosition(55, 17);
-        System.out.println("C.Health : ");
+        System.out.println("Number of C: " + pawnQueue.size() + " ");
         cn.getTextWindow().setCursorPosition(55, 19);
-        System.out.println("C.Score  : " );
+        System.out.println("C.Score  : ");
     }
 
-    public void generateInitialInputQueue(char[][]maze) {
+    public void generateInitialInputQueue(char[][] maze) {
 
         for (int i = 0; i < 10; i++) {
             Object inputQueueElement = generateInputQueueElement();
@@ -416,9 +418,8 @@ public class FireandIce {
                 fireCoordinates[lastFireIndex] = new Coordinates(rand_x, rand_y);
                 fires[lastFireIndex] = new Fire(cn, maze, fireCoordinates[lastFireIndex]);
                 lastFireIndex++;
-            }
-            else if (inputQueueElement.toString().equals("C")) {
-                if (pawnQueue.size()<maxComputerNum) {
+            } else if (inputQueueElement.toString().equals("C")) {
+                if (pawnQueue.size() < maxComputerNum) {
 
                     int rand_x;
                     int rand_y;
@@ -430,19 +431,20 @@ public class FireandIce {
                         }
 
                     }
-                    pawn = new ComputerPawn(rand_y,rand_x);
+                    pawn = new ComputerPawn(rand_y, rand_x);
                     //pawn.setCoordinates(rand_x,rand_y);
                     pawnQueue.enqueue(pawn);
                     maze[rand_y][rand_x] = 'C';
                 }
 
-            }
-            else{
-                while(true){
+            } else {
+                while (true) {
+
+                    char ch = inputQueueElement.toString().charAt(0);
                     int rand_x = random.nextInt(53);
                     int rand_y = random.nextInt(23);
-                    if(maze[rand_y][rand_x] == ' '){
-                        maze[rand_y][rand_x] = inputQueueElement.toString().charAt(0);
+                    if (maze[rand_y][rand_x] == ' ') {
+                        maze[rand_y][rand_x] = ch;
                         break;
                     }
                 }
@@ -492,8 +494,6 @@ public class FireandIce {
         return returnData;
     }
 
-
-
     public static boolean isAtPawnLimit() {
 
         return pawnQueue.size() == maxComputerNum;
@@ -514,10 +514,10 @@ public class FireandIce {
 
         int n = maze.length;
         int m = maze[0].length;
-        return x >= 1 && x < n && y >= 1 && y < m && maze[x][y] != '#' && maze[x][y] !='-' && maze[x][y] !='+' && maze[x][y] !='C';
+        return x >= 1 && x < n && y >= 1 && y < m && maze[x][y] != '#' && maze[x][y] != '-' && maze[x][y] != '+' && maze[x][y] != 'C';
     }
 
-    public static void movePawnsEasyMode(){
+    public static void movePawnsEasyMode() {
         int count = pawnQueue.size();
         for (int i = 0; i < count; i++) {
             ComputerPawn pawn = (ComputerPawn) pawnQueue.peek();
@@ -527,57 +527,54 @@ public class FireandIce {
             int pawnX = pawnLocation.getX();
             int pawnY = pawnLocation.getY();
             int treasureX = closestTreasure.getX();
-            int treasureY = closestTreasure.getY();;
+            int treasureY = closestTreasure.getY();
+            ;
             CircularQueue destQueue = new CircularQueue(4);
-            if(treasureX>=pawnX && treasureY >= pawnY){
+            if (treasureX >= pawnX && treasureY >= pawnY) {
                 quadrant = 4;
                 //pawnx, pawny+1
                 //pawnx +1, pawny
-                destQueue.enqueue(new Coordinates(0,1));
-                destQueue.enqueue(new Coordinates(1,0));
-                destQueue.enqueue(new Coordinates(0,-1));
-                destQueue.enqueue(new Coordinates(-1,0));
-            }
-            else if(treasureX>=pawnX && treasureY<=pawnY){
+                destQueue.enqueue(new Coordinates(0, 1));
+                destQueue.enqueue(new Coordinates(1, 0));
+                destQueue.enqueue(new Coordinates(0, -1));
+                destQueue.enqueue(new Coordinates(-1, 0));
+            } else if (treasureX >= pawnX && treasureY <= pawnY) {
                 quadrant = 2;
                 //pawnx, pawny+1
                 //pawnx-1,pawny
-                destQueue.enqueue(new Coordinates(0,1));
-                destQueue.enqueue(new Coordinates(-1,0));
-                destQueue.enqueue(new Coordinates(0,-1));
-                destQueue.enqueue(new Coordinates(1,0));
-            }
-            else if(treasureX<=pawnX && treasureY>=pawnY){
+                destQueue.enqueue(new Coordinates(0, 1));
+                destQueue.enqueue(new Coordinates(-1, 0));
+                destQueue.enqueue(new Coordinates(0, -1));
+                destQueue.enqueue(new Coordinates(1, 0));
+            } else if (treasureX <= pawnX && treasureY >= pawnY) {
                 quadrant = 3;
                 //pawnx, pawny-1
                 //pawnx+1, pawny
-                destQueue.enqueue(new Coordinates(0,-1));
-                destQueue.enqueue(new Coordinates(1,0));
-                destQueue.enqueue(new Coordinates(0,1));
-                destQueue.enqueue(new Coordinates(1,0));
-            }
-            else {
-                quadrant =1;
+                destQueue.enqueue(new Coordinates(0, -1));
+                destQueue.enqueue(new Coordinates(1, 0));
+                destQueue.enqueue(new Coordinates(0, 1));
+                destQueue.enqueue(new Coordinates(1, 0));
+            } else {
+                quadrant = 1;
                 //pawnx, pawny-1
                 //pawnx-1,pawny
 
-                destQueue.enqueue(new Coordinates(0,-1));
-                destQueue.enqueue(new Coordinates(-1,0));
-                destQueue.enqueue(new Coordinates(0,1));
-                destQueue.enqueue(new Coordinates(1,0));
+                destQueue.enqueue(new Coordinates(0, -1));
+                destQueue.enqueue(new Coordinates(-1, 0));
+                destQueue.enqueue(new Coordinates(0, 1));
+                destQueue.enqueue(new Coordinates(1, 0));
             }
             for (int j = 0; j < 4; j++) {
-                Coordinates c = (Coordinates)destQueue.peek();
-                int destX = pawnX+c.getX();
-                int destY = pawnY+c.getY();
+                Coordinates c = (Coordinates) destQueue.peek();
+                int destX = pawnX + c.getX();
+                int destY = pawnY + c.getY();
                 char dest = maze[destX][destY];
-                if (dest == ' '||dest == '1' || dest == '2' || dest == '3') {
+                if (dest == ' ' || dest == '1' || dest == '2' || dest == '3') {
                     maze[destX][destY] = 'C';
                     maze[pawnX][pawnY] = ' ';
-                    pawn.setCoordinates(destX,destY);
+                    pawn.setCoordinates(destX, destY);
                     break;
-                }
-                else{
+                } else {
                     destQueue.enqueue(destQueue.dequeue());
                 }
             }
@@ -587,7 +584,7 @@ public class FireandIce {
         }
     }
 
-    public static Coordinates getClosestTreasureToPawn(Coordinates pawn){
+    public static Coordinates getClosestTreasureToPawn(Coordinates pawn) {
         int pawnX = pawn.getX();
         int pawnY = pawn.getY();
         double minDistance = 1000.0;
@@ -595,69 +592,63 @@ public class FireandIce {
         CircularQueue treasureQueue = new CircularQueue(50);
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[0].length; j++) {
-                if(maze[i][j] == '1'||maze[i][j] == '2'||maze[i][j] == '3'){
-                    double distance = Math.sqrt(Math.pow(pawnX-i,2) + Math.pow(pawnY-j,2));
-                    if(distance<minDistance){
+                if (maze[i][j] == '1' || maze[i][j] == '2' || maze[i][j] == '3') {
+                    double distance = Math.sqrt(Math.pow(pawnX - i, 2) + Math.pow(pawnY - j, 2));
+                    if (distance < minDistance) {
                         treasureQueue.dequeue();
-                        treasureQueue.enqueue(new Coordinates(i,j));
+                        treasureQueue.enqueue(new Coordinates(i, j));
                         minDistance = distance;
                     }
-
-
                 }
-
             }
-
         }
-        return (Coordinates) treasureQueue.peek();
 
+        return (Coordinates) treasureQueue.peek();
 
 
     }
 
-    public static void movePawnsHardMode(){
+    public static void movePawnsHardMode() {
         int size = pawnQueue.size();
         for (int i = 0; i < size; i++) {
             ComputerPawn p = (ComputerPawn) pawnQueue.peek();
-            if(p.getPath() ==null || p.getPath().isEmpty()){
+            if (p.getPath() == null || p.getPath().isEmpty()) {
                 continue;
-            }
-            else{
+            } else {
                 int srcX = p.getCoordinates().getX();
                 int srcY = p.getCoordinates().getY();
-                int dstX = ((Coordinates)p.getPath().peek()).getX();
-                int dstY = ((Coordinates)p.getPath().peek()).getY();
-                while(srcX == dstX && srcY == dstY){
+                int dstX = ((Coordinates) p.getPath().peek()).getX();
+                int dstY = ((Coordinates) p.getPath().peek()).getY();
+                while (srcX == dstX && srcY == dstY) {
                     p.getPath().dequeue();
-                    dstX = ((Coordinates)p.getPath().peek()).getX();
-                    dstY = ((Coordinates)p.getPath().peek()).getY();
+                    dstX = ((Coordinates) p.getPath().peek()).getX();
+                    dstY = ((Coordinates) p.getPath().peek()).getY();
 
                 }
 
 
-                if(maze[dstX][dstY]!='P'){
+                if (maze[dstX][dstY] != 'P') {
 
                     //check fire or ice
                     char pos = maze[dstX][dstY];
-                    char north = maze[dstX-1][dstY];
-                    char south = maze[dstX+1][dstY];
-                    char west = maze[dstX][dstY-1];
-                    char east = maze[dstX][dstY+1];
-                    if(pos == '+' ||  north == '+' || south == '+'|| west == '+'|| east == '+'){
+                    char north = maze[dstX - 1][dstY];
+                    char south = maze[dstX + 1][dstY];
+                    char west = maze[dstX][dstY - 1];
+                    char east = maze[dstX][dstY + 1];
+                    if (pos == '+' || north == '+' || south == '+' || west == '+' || east == '+') {
                         p.decreaseHealth(50);
                     }
-                    if(north == 'P'||south == 'P'||west == 'P'||east == 'P'){
+                    if (north == 'P' || south == 'P' || west == 'P' || east == 'P') {
                         player.decreaseHealth(1);
 
                     }
-                    if(p.getHealth()<=0){
+                    if (p.getHealth() <= 0) {
                         maze[srcX][srcY] = ' ';
                         pawnQueue.dequeue();
-                    }
-                    else{
+                    } else {
                         maze[srcX][srcY] = ' ';
                         maze[dstX][dstY] = 'C';
-                        p.setCoordinates(dstX,dstY);
+                        p.setCoordinates(dstX, dstY);
                         p.cycleNextDestination();
                     }
 
@@ -669,10 +660,12 @@ public class FireandIce {
         }
 
 
-
     }
 
     public static Queue findPath(Coordinates start, Coordinates destination) {
+        if (destination == null){
+            return null;
+        }
         int[] dx = {0, 0, 1, -1}; // Possible movements in x direction
         int[] dy = {1, -1, 0, 0};
         int n = maze.length;
@@ -713,19 +706,24 @@ public class FireandIce {
         return null;
     }
 
-    static void recalculatePawnPaths(){
+    static void recalculatePawnPaths() {
 
         int pawn_amount = pawnQueue.size();
 
         for (int i = 0; i < pawn_amount; i++) {
-            ComputerPawn p =(ComputerPawn) pawnQueue.peek();
-            p.setPath(findPath(p.getCoordinates(),getClosestTreasureToPawn(p.getCoordinates())));
+            ComputerPawn p = (ComputerPawn) pawnQueue.peek();
+            p.setPath(findPath(p.getCoordinates(), getClosestTreasureToPawn(p.getCoordinates())));
             pawnQueue.enqueue(pawnQueue.dequeue());
 
         }
 
     }
 
-
-
+    void clearScreen() {
+        String space = "                                                                       ";
+        for (int i = 0; i < 23; i++) {
+            cn.getTextWindow().setCursorPosition(0, i);
+            cn.getTextWindow().output(space);
+        }
+    }
 }
