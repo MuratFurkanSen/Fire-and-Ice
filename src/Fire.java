@@ -14,6 +14,7 @@ public class Fire {
     private int dir_rot;
     private boolean isPlaced;
     private int count;
+    private int spread_count = 0;
     Random random = new Random();
 
     Fire(enigma.console.Console cn, char[][] maze,Coordinates start_cr) {//thisleri sildim?
@@ -74,8 +75,13 @@ public class Fire {
             dir_index += dir_rot*dirs.length*-1;
         }
         if (!isPlaced){
-            spread();
+            if (spread_count<200) {
+                spread_count++;
+                spread();
+            }
         }
+        spread_count = 0;
+
     }
     void erase() {
         all_pieces.dequeue();

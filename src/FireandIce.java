@@ -126,7 +126,9 @@ public class FireandIce {
 
         while (player.getHealth() > 0) {
 
+            printMaze();
             checkDamage();
+
 
             if (loopcount % 20 == 0) {
                 //if input queue has fire adds a new fire object
@@ -495,9 +497,7 @@ public class FireandIce {
     }
 
     public static boolean isAtPawnLimit() {
-
         return pawnQueue.size() == maxComputerNum;
-
     }
 
 	/*public static void generateComputerPawn(){
