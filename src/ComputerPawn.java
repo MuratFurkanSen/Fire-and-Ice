@@ -3,6 +3,7 @@ public class ComputerPawn {
     private int health;
     private Coordinates computerCoordinates;
     private int score;
+    private Queue path;
 
     ComputerPawn(int x, int y){
         health=1000;
@@ -23,6 +24,20 @@ public class ComputerPawn {
     int getHealth() {return health;}
     Coordinates getCoordinates() {
         return computerCoordinates;
+    }
+    void setPath(Queue path){
+        this.path = path;
+    }
+    Queue getPath(){
+        return path;
+    }
+
+    void cycleNextDestination(){
+        if(!path.isEmpty()){
+            this.path.dequeue();
+        }
+
+
     }
 
 

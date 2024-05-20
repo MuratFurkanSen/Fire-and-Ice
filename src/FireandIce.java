@@ -4,8 +4,8 @@ import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
+import java.util.List;
 
 import enigma.console.TextAttributes;
 import enigma.core.Enigma;
@@ -14,7 +14,6 @@ import static java.awt.Color.*;
 
 public class FireandIce {
     static enigma.console.Console cn = Enigma.getConsole("Hallo", 75, 23, 20, 6);
-
     public KeyListener klis;
 
     // ------ Standard variables for keyboard ------
@@ -27,13 +26,14 @@ public class FireandIce {
 
     public static char[][] maze = new char[23][53];
 
-    Player player;
+    static Player player;
 
-    int time;
+    static int time;
     int loopcount;
     Random rnd;
     int px ;
     int py;
+    boolean hardMode = false;
 
     Ice[] ices;
     Coordinates[] iceCoordinates ;
@@ -109,19 +109,19 @@ public class FireandIce {
         updateMaze( px, py, 'P', null);
 
         new Ice(cn);
-        ices = new Ice[50];
-        iceCoordinates = new Coordinates[50];
-        isIceSpreadDone = new boolean[50];
-        countForIceSpread = new int[50];
+        ices = new Ice[100];
+        iceCoordinates = new Coordinates[100];
+        isIceSpreadDone = new boolean[100];
+        countForIceSpread = new int[100];
         lastIceIndex = 0;
 
-        fires = new Fire[50];
-        fireCoordinates = new Coordinates[50];
-        isFireSpreadingDone = new boolean[50];
-        countForFireSpread = new int[50];
+        fires = new Fire[100];
+        fireCoordinates = new Coordinates[100];
+        isFireSpreadingDone = new boolean[100];
+        countForFireSpread = new int[100];
         lastFireIndex = 0;
 
-        generateInitialInputQueue();
+        generateInitialInputQueue(maze);
 
 
         while (player.getHealth() > 0) {
@@ -214,7 +214,7 @@ public class FireandIce {
 
                 if (rkey == KeyEvent.VK_LEFT) {
 
-                    if (maze[py][px - 1] != '#' && maze[py][px - 1] != '+' && maze[py][px - 1] != '-') {
+                    if (maze[py][px - 1] != '#' && maze[py][px - 1] != '+' && maze[py][px - 1] != '-' && maze[py][px - 1] != 'C') {
                         updateMaze( px, py, ' ', null);
                         px--;
                         checkTreasure();
@@ -225,7 +225,7 @@ public class FireandIce {
                     player.setCoordinates(px , py);
                 } else if (rkey == KeyEvent.VK_RIGHT) {
 
-                    if (maze[py][px + 1] != '#' && maze[py][px + 1] != '+' && maze[py][px + 1] != '-') {
+                    if (maze[py][px + 1] != '#' && maze[py][px + 1] != '+' && maze[py][px + 1] != '-' && maze[py][px + 1] != 'C') {
                         updateMaze( px, py, ' ', null);
                         px++;
                         checkTreasure();
@@ -238,7 +238,7 @@ public class FireandIce {
                     player.setCoordinates(px, py);
                 } else if (rkey == KeyEvent.VK_UP) {
 
-                    if (maze[py - 1][px] != '#' && maze[py - 1][px] != '+' && maze[py - 1][px] != '-') {
+                    if (maze[py - 1][px] != '#' && maze[py - 1][px] != '+' && maze[py - 1][px] != '-' && maze[py - 1][px] != 'C') {
                         updateMaze( px, py, ' ', null);
                         py--;
                         checkTreasure();
@@ -249,19 +249,22 @@ public class FireandIce {
                     player.setCoordinates(px, py);
                 } else if (rkey == KeyEvent.VK_DOWN) {
 
-                    if (maze[py + 1][px] != '#' && maze[py + 1][px] != '+' && maze[py + 1][px] != '-') {
+                    if (maze[py + 1][px] != '#' && maze[py + 1][px] != '+' && maze[py + 1][px] != '-' && maze[py + 1][px] != 'C') {
                         updateMaze( px, py, ' ', null);
                         py++;
                         checkTreasure();
                         checkIcePack();
                         updateMaze( px, py, 'P', null);
+
                     }
                     player.setDirection(0, 1);
                     player.setCoordinates(px, py );
                 } else if (rkey == KeyEvent.VK_SPACE && player.getPackedIceCount() > 0) {
-                    ices[lastIceIndex] = new Ice(player.getCoordinates(), player.getDirection(),maze);
-                    lastIceIndex++;
-                    player.usePackedIce();
+                    if(maze[py + 1][px] == ' ' || maze[py][px + 1] == ' ' || maze[py - 1][px] == ' ' || maze[py][px - 1] == ' '){
+                        ices[lastIceIndex] = new Ice(player.getCoordinates(), player.getDirection(),maze);
+                        lastIceIndex++;
+                        player.usePackedIce();
+                    }
                 } else if (rkey == KeyEvent.VK_Q) { // Hata kontrollerinde oyunu durdurmak için (silinecek)
                     printMaze();
                     Thread.sleep(50000);
@@ -273,11 +276,21 @@ public class FireandIce {
             }
 
             Thread.sleep(100);
-            movePawns();
+
+
+            //movePawnsEasyMode();
+            //movePawnsHardMode();
+            //
+            //movePawnsHardMode();
 
             loopcount++;
             if (loopcount % 10 == 0) {
                 time++;
+            }
+            if(loopcount %4 == 0){
+                recalculatePawnPaths();
+                movePawnsHardMode();
+                printMaze();
             }
         }
 
@@ -325,6 +338,7 @@ public class FireandIce {
     public void updateMaze(int x, int y, char ch, TextAttributes color) {
         maze[y][x] = ch;
         cn.getTextWindow().output(x, y, ch);
+        //recalculatePawnPaths();
     }
     // Usage
     //updateMaze( 5,5,'A', red);
@@ -338,7 +352,7 @@ public class FireandIce {
         }
     }
 
-    public void printMaze() {
+    public static void printMaze() {
         TextAttributes wallColor = new TextAttributes(blue, blue);
         TextAttributes iceColor = new TextAttributes(cyan);
         TextAttributes fireColor = new TextAttributes(red);
@@ -384,9 +398,57 @@ public class FireandIce {
         System.out.println("C.Score  : " );
     }
 
-    public void generateInitialInputQueue() {
+    public void generateInitialInputQueue(char[][]maze) {
+
         for (int i = 0; i < 10; i++) {
-            inputQueue.enqueue(generateInputQueueElement());
+            Object inputQueueElement = generateInputQueueElement();
+            inputQueue.enqueue(inputQueueElement);
+            if (inputQueueElement.toString().equals("-")) {
+                int rand_x;
+                int rand_y;
+                while (true) {
+                    rand_x = random.nextInt(53);
+                    rand_y = random.nextInt(23);
+                    if (maze[rand_y][rand_x] == ' ') {
+                        break;
+                    }
+                }
+                fireCoordinates[lastFireIndex] = new Coordinates(rand_x, rand_y);
+                fires[lastFireIndex] = new Fire(cn, maze, fireCoordinates[lastFireIndex]);
+                lastFireIndex++;
+            }
+            else if (inputQueueElement.toString().equals("C")) {
+                if (pawnQueue.size()<maxComputerNum) {
+
+                    int rand_x;
+                    int rand_y;
+                    while (true) {
+                        rand_x = random.nextInt(53);
+                        rand_y = random.nextInt(23);
+                        if (maze[rand_y][rand_x] == ' ') {
+                            break;
+                        }
+
+                    }
+                    pawn = new ComputerPawn(rand_y,rand_x);
+                    //pawn.setCoordinates(rand_x,rand_y);
+                    pawnQueue.enqueue(pawn);
+                    maze[rand_y][rand_x] = 'C';
+                }
+
+            }
+            else{
+                while(true){
+                    int rand_x = random.nextInt(53);
+                    int rand_y = random.nextInt(23);
+                    if(maze[rand_y][rand_x] == ' '){
+                        maze[rand_y][rand_x] = inputQueueElement.toString().charAt(0);
+                        break;
+                    }
+                }
+            }
+
+
         }
         printInputQueue();
     }
@@ -410,7 +472,7 @@ public class FireandIce {
         }
     }
 
-    public static Object generateInputQueueElement() {
+    public Object generateInputQueueElement() {
         Object returnData;
         int randomNumber = random.nextInt(30);
         if (randomNumber < 5) {
@@ -448,16 +510,14 @@ public class FireandIce {
         return maze;
     }
 
-    public boolean isValidDestination(int x, int y) {
+    public static boolean isValidDestination(int x, int y) {
 
-        boolean isNotWall = maze[y][x] != '#';
-        boolean isNotFire = maze[y][x] != '-';
-        boolean isNotIce = maze[y][x] != '+';
-
-        return isNotIce && isNotFire && isNotWall;
+        int n = maze.length;
+        int m = maze[0].length;
+        return x >= 1 && x < n && y >= 1 && y < m && maze[x][y] != '#' && maze[x][y] !='-' && maze[x][y] !='+' && maze[x][y] !='C';
     }
 
-    public static void movePawns(){
+    public static void movePawnsEasyMode(){
         int count = pawnQueue.size();
         for (int i = 0; i < count; i++) {
             ComputerPawn pawn = (ComputerPawn) pawnQueue.peek();
@@ -536,7 +596,7 @@ public class FireandIce {
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[0].length; j++) {
                 if(maze[i][j] == '1'||maze[i][j] == '2'||maze[i][j] == '3'){
-                    double distance = Math.sqrt(Math.pow(pawnX-pawnY,2) + Math.pow(j-i,2));
+                    double distance = Math.sqrt(Math.pow(pawnX-i,2) + Math.pow(pawnY-j,2));
                     if(distance<minDistance){
                         treasureQueue.dequeue();
                         treasureQueue.enqueue(new Coordinates(i,j));
@@ -554,6 +614,118 @@ public class FireandIce {
 
 
     }
+
+    public static void movePawnsHardMode(){
+        int size = pawnQueue.size();
+        for (int i = 0; i < size; i++) {
+            ComputerPawn p = (ComputerPawn) pawnQueue.peek();
+            if(p.getPath() ==null || p.getPath().isEmpty()){
+                continue;
+            }
+            else{
+                int srcX = p.getCoordinates().getX();
+                int srcY = p.getCoordinates().getY();
+                int dstX = ((Coordinates)p.getPath().peek()).getX();
+                int dstY = ((Coordinates)p.getPath().peek()).getY();
+                while(srcX == dstX && srcY == dstY){
+                    p.getPath().dequeue();
+                    dstX = ((Coordinates)p.getPath().peek()).getX();
+                    dstY = ((Coordinates)p.getPath().peek()).getY();
+
+                }
+
+
+                if(maze[dstX][dstY]!='P'){
+
+                    //check fire or ice
+                    char pos = maze[dstX][dstY];
+                    char north = maze[dstX-1][dstY];
+                    char south = maze[dstX+1][dstY];
+                    char west = maze[dstX][dstY-1];
+                    char east = maze[dstX][dstY+1];
+                    if(pos == '+' ||  north == '+' || south == '+'|| west == '+'|| east == '+'){
+                        p.decreaseHealth(50);
+                    }
+                    if(north == 'P'||south == 'P'||west == 'P'||east == 'P'){
+                        player.decreaseHealth(1);
+
+                    }
+                    if(p.getHealth()<=0){
+                        maze[srcX][srcY] = ' ';
+                        pawnQueue.dequeue();
+                    }
+                    else{
+                        maze[srcX][srcY] = ' ';
+                        maze[dstX][dstY] = 'C';
+                        p.setCoordinates(dstX,dstY);
+                        p.cycleNextDestination();
+                    }
+
+                }
+
+
+            }
+            pawnQueue.enqueue(pawnQueue.dequeue());
+        }
+
+
+
+    }
+
+    public static Queue findPath(Coordinates start, Coordinates destination) {
+        int[] dx = {0, 0, 1, -1}; // Possible movements in x direction
+        int[] dy = {1, -1, 0, 0};
+        int n = maze.length;
+        int m = maze[0].length;
+        boolean[][] visited = new boolean[n][m];
+        Coordinates[][] parent = new Coordinates[n][m];
+        Queue queue = new Queue(50);
+
+        queue.enqueue(start);
+        visited[start.getX()][start.getY()] = true;
+
+        while (!queue.isEmpty()) {
+            Coordinates current = (Coordinates) queue.dequeue();
+            if (current.getX() == destination.getX() && current.getY() == destination.getY()) {
+                // Destination reached, construct path
+                Queue path = new Queue(50);
+                while (current != null) {
+                    path.enqueue(current);
+                    current = parent[current.getX()][current.getY()];
+                }
+                path.reverse();
+                return path;
+            }
+
+            for (int i = 0; i < 4; i++) {
+                int newX = current.getX() + dx[i];
+                int newY = current.getY() + dy[i];
+                if (isValidDestination(newX, newY) && !visited[newX][newY]) {
+                    Coordinates next = new Coordinates(newX, newY);
+                    queue.enqueue(next);
+                    visited[newX][newY] = true;
+                    parent[newX][newY] = current;
+                }
+            }
+        }
+
+        // No path found
+        return null;
+    }
+
+    static void recalculatePawnPaths(){
+
+        int pawn_amount = pawnQueue.size();
+
+        for (int i = 0; i < pawn_amount; i++) {
+            ComputerPawn p =(ComputerPawn) pawnQueue.peek();
+            p.setPath(findPath(p.getCoordinates(),getClosestTreasureToPawn(p.getCoordinates())));
+            pawnQueue.enqueue(pawnQueue.dequeue());
+
+        }
+
+    }
+
 
 
 }
