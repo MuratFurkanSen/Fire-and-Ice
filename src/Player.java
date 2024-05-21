@@ -32,6 +32,7 @@ public class Player {
 		packedicecount--;
 	}
 	int getHealth() {return health;}
+	void setHealth(int h) {health=h;}
 	Coordinates getDirection() {return direction;}
 	Coordinates getCoordinates() {
 		return playerCoordinates;

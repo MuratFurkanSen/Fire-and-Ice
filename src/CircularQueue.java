@@ -7,9 +7,9 @@ public class CircularQueue {
         front = 0;
         rear = -1;
     }
-    void enqueue(Object data) {
+    void enqueue(Object data)  {
         if (isFull()) {
-            System.out.println("Queue overflow");
+            System.out.println("Queue is full");
         } else {
             rear = (rear + 1) % elements.length;
             elements[rear] = data;

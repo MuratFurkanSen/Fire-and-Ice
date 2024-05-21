@@ -182,7 +182,7 @@ public class FireandIce {
                     fires[k].increaseTimer();
                     printMaze();
                     countForFireSpread[k]++;
-                    if (countForFireSpread[k] == 150) {
+                    if (fires[k].size() == 0) {
                         isFireSpreadingDone[k] = true;
                     }
                 }
@@ -195,7 +195,7 @@ public class FireandIce {
                     ices[k].increaseTimer();
                     printMaze();
                     countForIceSpread[k]++;
-                    if (countForIceSpread[k] == 125) {
+                    if (ices[k].size() == 0) {
                         isIceSpreadDone[k] = true;
                     }
                 }
